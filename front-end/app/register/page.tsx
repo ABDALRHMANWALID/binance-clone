@@ -1,13 +1,136 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { z } from 'zod';
+import { api } from '@/app/lib/axios';
+import { useRouter } from 'next/navigation';
+
+const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, 'Name must be at least 2 characters'),
+
+    email: z
+      .string()
+      .email('Please enter a valid email'),
+
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters'),
+
+    confirmPassword: z.string(),
+
+    terms: z
+      .boolean()
+      .refine((value) => value === true, {
+        message: 'You must accept the Terms of Service',
+      }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 export default function RegisterPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    terms: false,
+  });
+
+  const [errors, setErrors] = useState<
+    Record<string, string>
+  >({});
+
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState('');
+  const router = useRouter();
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { name, value, type, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: '',
+    }));
+
+    setServerError('');
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+
+    setErrors({});
+    setServerError('');
+
+    const result = registerSchema.safeParse(formData);
+
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0];
+
+        if (typeof field === 'string') {
+          fieldErrors[field] = issue.message;
+        }
+      });
+
+      setErrors(fieldErrors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { name, email, password } = result.data;
+
+      const response = await api.post('/auth/register', {
+        name,
+        email,
+        password,
+      });
+
+      console.log('Registered successfully:', response.data);
+
+      const { token } = response.data;
+
+      localStorage.setItem('token', token);
+
+      // router.push('/');
+      window.location.href = '/';
+
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        setServerError('Email already exists');
+      } else {
+        setServerError(
+          error.response?.data?.message ||
+          'Something went wrong. Please try again.',
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-[calc(100vh-64px)] bg-slate-950 px-6 py-12 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-160px)] max-w-md items-center justify-center">
         <div className="w-full">
-          {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold">
               Create your account
@@ -18,9 +141,11 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Register Card */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
-            <form className="space-y-5">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
               {/* Full Name */}
               <div>
                 <label
@@ -32,10 +157,19 @@ export default function RegisterPage() {
 
                 <input
                   id="name"
+                  name="name"
                   type="text"
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="Enter your full name"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-yellow-400"
                 />
+
+                {errors.name && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
@@ -49,10 +183,19 @@ export default function RegisterPage() {
 
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Enter your email"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-yellow-400"
                 />
+
+                {errors.email && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -66,10 +209,19 @@ export default function RegisterPage() {
 
                 <input
                   id="password"
+                  name="password"
                   type="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="Create a password"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-yellow-400"
                 />
+
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               {/* Confirm Password */}
@@ -83,17 +235,29 @@ export default function RegisterPage() {
 
                 <input
                   id="confirmPassword"
+                  name="confirmPassword"
                   type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                   placeholder="Confirm your password"
                   className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-yellow-400"
                 />
+
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-xs text-red-400">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               {/* Terms */}
               <div className="flex items-start gap-3">
                 <input
                   id="terms"
+                  name="terms"
                   type="checkbox"
+                  checked={formData.terms}
+                  onChange={handleChange}
                   className="mt-1 h-4 w-4 rounded border-slate-700 bg-slate-950 accent-yellow-400"
                 />
 
@@ -118,12 +282,28 @@ export default function RegisterPage() {
                 </label>
               </div>
 
+              {errors.terms && (
+                <p className="-mt-3 text-xs text-red-400">
+                  {errors.terms}
+                </p>
+              )}
+
+              {/* Server Error */}
+              {serverError && (
+                <div className="rounded-lg border border-red-900 bg-red-950/50 p-3 text-sm text-red-400">
+                  {serverError}
+                </div>
+              )}
+
               {/* Register */}
               <button
                 type="submit"
-                className="w-full rounded-lg bg-yellow-400 py-3 font-semibold text-slate-950 transition hover:bg-yellow-300"
+                disabled={loading}
+                className="w-full rounded-lg bg-yellow-400 py-3 font-semibold text-slate-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Create Account
+                {loading
+                  ? 'Creating account...'
+                  : 'Create Account'}
               </button>
             </form>
 

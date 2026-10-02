@@ -8,7 +8,7 @@ const Header = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         setIsLoggedIn(!!token);
-    }, []);
+    });
 
     return (
         <header className="border-b border-slate-800">
