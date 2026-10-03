@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { PaymentMethodsModule } from './payment-methods/payment-methods.module.js';
+import { AdsModule } from './ads/ads.module.js';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { AppService } from './app.service.js';
       }),
     }),
     AuthModule,
+    PaymentMethodsModule,
+    AdsModule,
   ],
     controllers: [AppController],
   providers: [AppService],
