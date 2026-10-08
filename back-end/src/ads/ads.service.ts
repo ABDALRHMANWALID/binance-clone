@@ -16,12 +16,11 @@ const toUnits = (v: string) => parseUnits(v, DECIMALS);
 export class AdsService {
   constructor(
     @InjectRepository(Ad) private readonly ads: Repository<Ad>,
-    private readonly dataSource: DataSource, // للـ transactions
+    private readonly dataSource: DataSource, 
   ) {}
 
   // ---------------------------------------------------------------- helpers
 
-  /** لازم كل طرق الدفع تبقى بتاعة صاحب الإعلان ومفعّلة. */
   private async getOwnedMethods(em: EntityManager, userId: string, ids: number[] | undefined) {
     const unique = [...new Set(ids)];
     const methods = await em.find(PaymentMethod, { where: { id: In(unique), userId, isActive: true } });
@@ -31,7 +30,6 @@ export class AdsService {
     return methods;
   }
 
-  /** إعلان البيع لازم يكون وراه رصيد. (القفل الفعلي بيحصل وقت فتح الـ order.) */
   private async assertBacked(em: EntityManager, userId: string, asset: string, total: bigint) {
     const balance = await em.findOne(Balance, { where: { userId, asset } });
     if (BigInt(balance?.available ?? '0') < total) {
@@ -46,7 +44,6 @@ export class AdsService {
     if (min > max) throw new BadRequestException('minFiat must be <= maxFiat');
   }
 
-  /** الشكل اللي بيرجع لصاحب الإعلان (create / update). */
   private toOwnerResponse(ad: Ad) {
     return {
       id: ad.id,
@@ -84,11 +81,11 @@ export class AdsService {
           fiat,
           price: dto.price,
           total: total.toString(),
-          remaining: total.toString(), // أول ما بيتنشر: المتبقي = الكل
+          remaining: total.toString(), 
           minFiat: dto.minFiat,
           maxFiat: dto.maxFiat,
           status: 'active',
-          paymentMethods: methods, // TypeORM بيكتب صفوف ad_payment_methods لوحده
+          paymentMethods: methods, 
         }),
       );
       return this.toOwnerResponse(ad);

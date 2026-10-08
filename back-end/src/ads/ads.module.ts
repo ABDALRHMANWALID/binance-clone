@@ -11,7 +11,7 @@ import { PaymentMethod } from '../payment-methods/payment-method.entity.js';
 @Module({
    imports: [
     AuthModule,
-    TypeOrmModule.forFeature([Ad, PaymentMethod, User, Balance]),   // ← Ad لازم تكون هنا
+    TypeOrmModule.forFeature([Ad, PaymentMethod, User, Balance]),
   ],
   providers: [AdsService],
   controllers: [AdsController]
