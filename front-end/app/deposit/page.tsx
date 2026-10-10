@@ -96,6 +96,11 @@ const Deposit = () => {
                     asset,
                     network,
                 }
+                ,{
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
             );
 
             const parsedResponse = depositResponseSchema.safeParse(

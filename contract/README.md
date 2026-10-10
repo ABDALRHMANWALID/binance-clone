@@ -48,8 +48,15 @@ $ anvil
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ cd contract
+$ printf '\nPRIVATE_KEY=0x<deployer-private-key>\n' >> .env
+$ forge script script/Deploy.s.sol:Deploy --rpc-url sepolia --broadcast
 ```
+
+The deployer address is set as the treasury. `DepositFactory` creates its
+`DepositWallet` implementation in its constructor, so the script prints both
+deployed contract addresses. Keep `PRIVATE_KEY` in the ignored local `.env`
+file; never commit or share it. The deployer account needs Sepolia ETH for gas.
 
 ### Cast
 

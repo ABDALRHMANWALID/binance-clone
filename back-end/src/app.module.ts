@@ -6,9 +6,13 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PaymentMethodsModule } from './payment-methods/payment-methods.module.js';
 import { AdsModule } from './ads/ads.module.js';
+import { DepositModule } from './deposit/deposit.module.js';
+import { BlockchainModule } from './blockchain/blockchain.module.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -33,8 +37,10 @@ import { AdsModule } from './ads/ads.module.js';
     AuthModule,
     PaymentMethodsModule,
     AdsModule,
+    DepositModule,
+    BlockchainModule,
   ],
-    controllers: [AppController],
+  controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
