@@ -23,8 +23,7 @@ export class Deposit {
     @Column()
     asset: string;
 
-    @Column()
-    @IsOptional()
+    @Column({ nullable: true })
     token_address: string;
 
     @Column()
@@ -43,12 +42,10 @@ export class Deposit {
     @Column()
     block_number: number;
 
-    @CreateDateColumn()
-    @IsOptional()
+    @CreateDateColumn({ nullable: true })
     swept_at: Date;
   
-    @Column()
-    @IsOptional()
+    @Column({ nullable: true })
     sweep_tx_hash: string;
 
     @CreateDateColumn()

@@ -8,9 +8,9 @@ export class Balance {
     @Column()
     asset: string;
 
-    @Column({ type: 'numeric', precision: 38, scale: 0 })
+    @Column({ type: 'numeric', precision: 38, scale: 18, default: 0 })
     available: string;
 
-    @Column({ type: 'numeric', precision: 38, scale: 0 })
+    @Column({ type: 'numeric', precision: 38, scale: 18, default: 0 })
     locked: string;
 }
