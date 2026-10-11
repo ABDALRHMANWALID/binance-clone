@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,7 +11,6 @@ contract DepositFactory is Ownable {
         implementation = address(new DepositWallet());
         treasury = _treasury;
     }
-    
     function _salt(uint256 userId) internal pure returns (bytes32) {
         return keccak256(abi.encode(userId));
     }
@@ -24,13 +22,20 @@ contract DepositFactory is Ownable {
                 address(this)
             );
     }
-    function sweep(uint256 userId, IERC20 token) external onlyOwner {
-        address w = predict(userId);
+    // returns the user's wallet, deploying the clone first if it does not exist
+    function _wallet(uint256 userId) internal returns (DepositWallet) {
+        address payable w = payable(predict(userId));
         if (w.code.length == 0) {
             Clones.cloneDeterministic(implementation, _salt(userId));
             DepositWallet(w).init(address(this));
         }
-        DepositWallet(w).sweep(token, treasury);
+        return DepositWallet(w);
+    }
+    function sweep(uint256 userId, IERC20 token) external onlyOwner {
+        _wallet(userId).sweep(token, treasury);
+    }
+    function sweepETH(uint256 userId) external onlyOwner {
+        _wallet(userId).sweepETH(payable(treasury));
     }
     function setTreasury(address t) external onlyOwner {
         treasury = t;

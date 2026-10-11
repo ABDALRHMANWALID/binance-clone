@@ -9,10 +9,23 @@ import { DepositsListenerService } from './deposit.listener.js';
 import { Deposit } from './entities/deposit.js';
 import { ChainCursor } from './entities/chain_cursors.js';
 import { Balance } from '../ads/balance.entity.js';
+import { DepositSweeperService } from './deposit-sweeper/deposit-sweeper.service.js';
+import { Sweep } from './entities/sweep.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DepositAddress, Deposit, ChainCursor, Balance]),
-    AuthModule, BlockchainModule],
-  controllers: [DepositController,], providers: [DepositService, DepositsListenerService,], exports: [DepositService,],
+  imports: [
+    TypeOrmModule.forFeature([
+      DepositAddress,
+      Deposit,
+      ChainCursor,
+      Balance,
+      Sweep,
+    ]),
+    AuthModule,
+    BlockchainModule,
+  ],
+  controllers: [DepositController],
+  providers: [DepositService, DepositsListenerService, DepositSweeperService],
+  exports: [DepositService],
 })
-export class DepositModule { }
+export class DepositModule {}
