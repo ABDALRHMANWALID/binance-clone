@@ -46,6 +46,8 @@ const Deposit = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState<DepositSuccess | null>(null);
 
+    // CHANGED: identifies the current "waiting" loop, so old loops stop by themselves
+    const runIdRef = useRef(0);
 
     const selectedAsset = assets.find(
         (item) => item.symbol === asset
@@ -59,13 +61,65 @@ const Deposit = () => {
     }, [asset]);
 
     /*
-     * Cleanup WebSocket when component unmounts
+     * CHANGED: stop waiting when the component unmounts
      */
+    useEffect(() => {
+        return () => {
+            runIdRef.current += 1;
+        };
+    }, []);
+
+    /*
+     * CHANGED: ask the backend again and again until the deposit arrives
+     */
+    const waitForDeposit = async (address: string, runId: number) => {
+        let since = new Date().toISOString();
+
+        while (runId === runIdRef.current) {
+            try {
+                const { data } = await axios.get(
+                    "http://localhost:4000/deposit/wait",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                        params: { address, since },
+                    }
+                );
+
+                // the user left the page or asked for a new address meanwhile
+                if (runId !== runIdRef.current) return;
+
+                if (data.status === "pending") {
+                    since = data.since; // ask again from the same point
+                    continue;
+                }
+
+                // confirmed: map the backend response to the modal data
+                setSuccess({
+                    status: "Success",
+                    amount: Number(data.amountFormatted),
+                    currency: data.asset,
+                    transactionId: data.tx_hash,
+                    timestamp: new Date().toISOString(),
+                });
+                return; // the loop ends here
+            } catch {
+                if (runId === runIdRef.current) {
+                    setError("Lost connection while waiting for the deposit.");
+                }
+                return;
+            }
+        }
+    };
 
     const handleDeposit = async () => {
         setError("");
         setDepositAddress("");
         setSuccess(null);
+
+        // CHANGED: a new id for this request, which also stops any previous loop
+        const runId = ++runIdRef.current;
 
         const validation = depositRequestSchema.safeParse({
             asset,
@@ -104,52 +158,15 @@ const Deposit = () => {
                 throw new Error("Invalid response from server");
             }
             console.log("Deposit address response:", response);
-            const address = response.data.address;
+            const address = parsedResponse.data.address;
 
             setDepositAddress(address);
 
             /*
-             * Close previous socket if there is one
+             * CHANGED: wait for the deposit in the background.
+             * No await here, so the button goes back to normal right away.
              */
-
-            /*
-             * Connect to deposit WebSocket
-             */
-            const intervalId = setInterval(async () => {
-                const waitResponse = await axios.get(
-                    "http://localhost:4000/deposit/wait"
-                    , {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token")}`,
-                        },
-                        params: {
-                            address,
-                        },
-                    }
-                );
-
-                console.log("Wait response:", waitResponse.data);
-                if (waitResponse.data.status != "pending") {
-                    clearInterval(intervalId);   // this is what stops it
-                }
-
-            }, 25000);
-            // const waitResponse = await axios.get(
-            //     "http://localhost:4000/deposit/wait"
-            //     , {
-            //         headers: {
-            //             Authorization: `Bearer ${localStorage.getItem("token")}`,
-            //         },
-            //         params: {
-            //             address,
-            //         },
-            //     }
-            // );
-
-            // console.log("Wait response:", waitResponse.data);
-
-
-
+            void waitForDeposit(address, runId);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 setError(
