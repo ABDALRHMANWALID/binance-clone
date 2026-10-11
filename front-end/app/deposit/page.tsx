@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { io, Socket } from "socket.io-client";
 import { z } from "zod";
 
 const depositRequestSchema = z.object({
@@ -11,7 +10,7 @@ const depositRequestSchema = z.object({
 });
 
 const depositResponseSchema = z.object({
-    depositAddress: z.string().min(1),
+    address: z.string().min(1),
 });
 
 const depositSuccessSchema = z.object({
@@ -47,7 +46,6 @@ const Deposit = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState<DepositSuccess | null>(null);
 
-    const socketRef = useRef<Socket | null>(null);
 
     const selectedAsset = assets.find(
         (item) => item.symbol === asset
@@ -63,11 +61,6 @@ const Deposit = () => {
     /*
      * Cleanup WebSocket when component unmounts
      */
-    useEffect(() => {
-        return () => {
-            socketRef.current?.disconnect();
-        };
-    }, []);
 
     const handleDeposit = async () => {
         setError("");
@@ -96,7 +89,7 @@ const Deposit = () => {
                     asset,
                     network,
                 }
-                ,{
+                , {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                     },
@@ -110,74 +103,58 @@ const Deposit = () => {
             if (!parsedResponse.success) {
                 throw new Error("Invalid response from server");
             }
-
-            const address = parsedResponse.data.depositAddress;
+            console.log("Deposit address response:", response);
+            const address = response.data.address;
 
             setDepositAddress(address);
 
             /*
              * Close previous socket if there is one
              */
-            socketRef.current?.disconnect();
 
             /*
              * Connect to deposit WebSocket
              */
-            const socket = io(
-                "http://localhost:4000/checkMyDepositAddress",
-                {
-                    transports: ["websocket"],
-                }
-            );
+const intervalId =              setInterval(async () => {
+                const waitResponse = await axios.get(
+                    "http://localhost:4000/deposit/wait"
+                    , {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        },
+                        params: {
+                            address,
+                        },
+                    }
+                );
 
-            socketRef.current = socket;
-
-            socket.on("connect", () => {
-                console.log("Deposit WebSocket connected");
-
-                /*
-                 * Tell backend which address we are waiting for.
-                 */
-                socket.emit("watchDepositAddress", {
-                    depositAddress: address,
-                    asset,
-                    network,
-                });
-            });
-
-            socket.on("depositSuccess", (data) => {
-                const result = depositSuccessSchema.safeParse(data);
-
-                if (!result.success) {
-                    console.error(
-                        "Invalid deposit WebSocket response",
-                        result.error
-                    );
-                    return;
+                console.log("Wait response:", waitResponse.data);
+                if (waitResponse.data.status != "pending") {
+        clearInterval(intervalId);   // this is what stops it
                 }
 
-                setSuccess(result.data);
+            }, 25000);
+            // const waitResponse = await axios.get(
+            //     "http://localhost:4000/deposit/wait"
+            //     , {
+            //         headers: {
+            //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            //         },
+            //         params: {
+            //             address,
+            //         },
+            //     }
+            // );
 
-                /*
-                 * Deposit was found, so we don't
-                 * need to keep listening.
-                 */
-                socket.disconnect();
-                socketRef.current = null;
-            });
+            // console.log("Wait response:", waitResponse.data);
 
-            socket.on("connect_error", () => {
-                setError("Failed to connect to deposit service.");
-            });
 
-            socket.on("disconnect", () => {
-                console.log("Deposit WebSocket disconnected");
-            });
+
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 setError(
                     err.response?.data?.message ||
-                        "Failed to generate deposit address."
+                    "Failed to generate deposit address."
                 );
             } else if (err instanceof Error) {
                 setError(err.message);

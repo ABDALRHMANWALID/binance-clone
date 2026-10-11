@@ -15,7 +15,7 @@ export class DepositAddress {
 
     @Column({
         type: 'integer',
-        default: 31337,
+        default: 11155111,
     })
     chain_id: number;
 
