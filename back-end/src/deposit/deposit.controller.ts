@@ -47,6 +47,6 @@ export class DepositController {
       throw new BadRequestException('Invalid since');
     }
     // req.user.id comes from your auth guard (JWT or session)
-    return this.depositListenerService.waitForDeposit(user.id, address, sinceDate);
+    return this.depositService.waitForDeposit(user.id, address, sinceDate);
   }
 }

@@ -115,7 +115,7 @@ const Deposit = () => {
             /*
              * Connect to deposit WebSocket
              */
-const intervalId =              setInterval(async () => {
+            const intervalId = setInterval(async () => {
                 const waitResponse = await axios.get(
                     "http://localhost:4000/deposit/wait"
                     , {
@@ -130,7 +130,7 @@ const intervalId =              setInterval(async () => {
 
                 console.log("Wait response:", waitResponse.data);
                 if (waitResponse.data.status != "pending") {
-        clearInterval(intervalId);   // this is what stops it
+                    clearInterval(intervalId);   // this is what stops it
                 }
 
             }, 25000);
