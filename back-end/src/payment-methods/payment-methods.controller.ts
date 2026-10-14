@@ -10,7 +10,7 @@ export class PaymentMethodsController {
 
   /** GET /payment-methods */
   @Get()
-  listMine(@CurrentUser() user: { id: string }) {
-    return this.service.listMine(user.id);
+  listMine() {
+    return this.service.getAll();
   }
 }

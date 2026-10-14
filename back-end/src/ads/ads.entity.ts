@@ -1,5 +1,12 @@
 import {
-  Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { PaymentMethod } from '../payment-methods/payment-method.entity.js';
 import { User } from '../auth/user.entity.js';
@@ -24,7 +31,7 @@ export class Ad {
   @Column({ type: 'text' })
   side: AdSide;
 
-  @Column({ type: 'text', default: 'USDT' })
+  @Column({ type: 'text', default: 'ETH' })
   asset: string;
 
   @Column({ type: 'text', default: 'EGP' })
@@ -34,10 +41,10 @@ export class Ad {
   @Column({ type: 'numeric', precision: 20, scale: 6 })
   price: string;
 
-  @Column({ type: 'numeric', precision: 38, scale: 0 })
+  @Column({ type: 'numeric', precision: 38, scale: 18 })
   total: string;
 
-  @Column({ type: 'numeric', precision: 38, scale: 0 })
+  @Column({ type: 'numeric', precision: 38, scale: 18 })
   remaining: string;
 
   @Column({ name: 'min_fiat', type: 'numeric', precision: 20, scale: 6 })
@@ -57,7 +64,10 @@ export class Ad {
   @JoinTable({
     name: 'ad_payment_methods',
     joinColumn: { name: 'ad_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'payment_method_id', referencedColumnName: 'id' },
+    inverseJoinColumn: {
+      name: 'payment_method_id',
+      referencedColumnName: 'id',
+    },
   })
   paymentMethods: PaymentMethod[];
 }

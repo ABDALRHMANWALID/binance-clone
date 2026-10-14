@@ -9,6 +9,7 @@ import { AdsModule } from './ads/ads.module.js';
 import { DepositModule } from './deposit/deposit.module.js';
 import { BlockchainModule } from './blockchain/blockchain.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BalancesModule } from './balances/balances.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AdsModule,
     DepositModule,
     BlockchainModule,
+    BalancesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
