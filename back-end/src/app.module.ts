@@ -10,6 +10,8 @@ import { DepositModule } from './deposit/deposit.module.js';
 import { BlockchainModule } from './blockchain/blockchain.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BalancesModule } from './balances/balances.module.js';
+import { ChatModule } from './chat/chat.module.js';
+import { OrdersModule } from './orders/orders.module.js';
 
 @Module({
   imports: [
@@ -41,8 +43,10 @@ import { BalancesModule } from './balances/balances.module.js';
     DepositModule,
     BlockchainModule,
     BalancesModule,
+    ChatModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
